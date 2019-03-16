@@ -17,13 +17,13 @@ static int dev_probe(struct usb_interface *interface, const struct usb_device_id
 // output for usb disconnect interruption
 static void dev_disconnect(struct usb_interface *interface)
 {
-    printk(KERN_INFO "Dev drive removed\n"); // hardcoded usb vendor and product id (from lsusb)
+    printk(KERN_INFO "Dev drive removed\n");
 }
 
 // hardcoded device table to check which device is plugged (on which device we should interrupt)
 static struct usb_device_id dev_table[] =
 {
-    { USB_DEVICE(0x04e8, 0x6860) },
+    { USB_DEVICE(0x04e8, 0x6860) }, // hardcoded usb device vendor and products id
     {} 
 };
 MODULE_DEVICE_TABLE (usb, dev_table);
