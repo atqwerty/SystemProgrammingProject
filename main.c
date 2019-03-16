@@ -1,18 +1,23 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/usb.h>
+// #include <sys/time.h>
 
 // output for usb connect interruption
 static int dev_probe(struct usb_interface *interface, const struct usb_device_id *id)
 {
+    // time_t current_time;
+    // char* c_time_str;
+    // c_time_str = ctime(&current_time);
     printk(KERN_INFO "Dev drive (%04X:%04X) plugged\n", id->idVendor, id->idProduct);
+    // printk(KERN_INFO s_time_str);
     return 0;
 }
 
 // output for usb disconnect interruption
 static void dev_disconnect(struct usb_interface *interface)
 {
-    printk(KERN_INFO "Dev drive removed\n");
+    printk(KERN_INFO "Dev drive removed\n"); // hardcoded usb vendor and product id (from lsusb)
 }
 
 // hardcoded device table to check which device is plugged (on which device we should interrupt)
