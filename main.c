@@ -24,7 +24,7 @@ static void dev_disconnect(struct usb_interface *interface)
 static struct usb_device_id dev_table[] =
 {
     { USB_DEVICE(0x04e8, 0x6860) }, // hardcoded usb device vendor and products id
-    {} 
+    {} // govno 
 };
 MODULE_DEVICE_TABLE (usb, dev_table);
 
