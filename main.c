@@ -9,7 +9,9 @@
 #include <linux/usb.h>
 #include <linux/kref.h>
 
+#define MINOR_BASE	192
 
+// USB skeleton struct
 struct usb_skel {
 	struct usb_device *	udev;			/* the usb device for this device */
 	struct usb_interface *	interface;		/* the interface for this device */
@@ -20,7 +22,14 @@ struct usb_skel {
 	struct kref		kref;
 };
 
-// output for usb connect interruption
+static struct usb_class_driver skel_class = {
+	.name = "usb/skel%d",
+	// .fops = &skel_fops,
+	// .mode = S_IFCHR | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH,
+	.minor_base = MINOR_BASE,
+};
+
+// Output for usb connect interruption
 static int dev_probe(struct usb_interface *interface, const struct usb_device_id *id)
 {
     struct usb_skel *device_skeleton = NULL;
@@ -28,39 +37,81 @@ static int dev_probe(struct usb_interface *interface, const struct usb_device_id
 	struct usb_endpoint_descriptor *endpoint;
 	size_t buffer_size;
     int return_output = -ENOMEM;
+    int i;
 
     // Device skeleton memory allocation
     device_skeleton = kzalloc(sizeof(struct usb_skel), GFP_KERNEL);
 	if (device_skeleton == NULL) {
 		printk(KERN_INFO "Out of memory");
-		// goto error;
     }
     memset(device_skeleton, 0x00, sizeof (*device_skeleton));
     kref_init(&device_skeleton->kref);
 
-    printk(KERN_INFO "Dev drive (%04X:%04X) plugged\n", id->idVendor, id->idProduct);
-    printk(KERN_INFO "Test: %d\n", device_skeleton->udev->devnum);
-    
-// error:
-// 	if (device_skeleton)
-//         printk(KERN_INFO "Error");
-// 		// kref_put(&device_skeleton->kref, skel_delete);
-// 	return return_output;
+    device_skeleton->udev = usb_get_dev(interface_to_usbdev(interface));
+	device_skeleton->interface = interface;
+    iface_descriptor = interface->cur_altsetting;
 
-    return 0;
+    // Endpoint memory allocation and declaration
+    for(i = 0; i < iface_descriptor->desc.bNumEndpoints; i++){
+        endpoint = &iface_descriptor->endpoint[i].desc;
+        
+        if((!device_skeleton->bulk_in_endpointAddr) && (endpoint->bEndpointAddress & USB_DIR_IN) &&
+            ((endpoint->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK) == USB_ENDPOINT_XFER_BULK)){
+            buffer_size = endpoint->wMaxPacketSize;
+            device_skeleton->bulk_in_size = buffer_size;
+            device_skeleton->bulk_in_endpointAddr = endpoint->bEndpointAddress;
+            device_skeleton->bulk_in_buffer = kmalloc(buffer_size, GFP_KERNEL);
+
+            // Error in bulk in buffer
+            if (!device_skeleton->bulk_in_buffer) {
+                printk(KERN_INFO "Could not allocate bulk_in_buffer");
+            }
+        
+        }
+
+        if (!device_skeleton->bulk_out_endpointAddr && !(endpoint->bEndpointAddress & USB_DIR_IN) &&
+		    ((endpoint->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK) == USB_ENDPOINT_XFER_BULK)) {
+			
+            // There is an endpoint
+			device_skeleton->bulk_out_endpointAddr = endpoint->bEndpointAddress;
+		}
+        
+    }
+
+    if (!(device_skeleton->bulk_in_endpointAddr && device_skeleton->bulk_out_endpointAddr)) {
+        printk(KERN_INFO "Could not find both bulk-in and bulk-out endpoints");
+	}
+
+	// Save to pointer
+	usb_set_intfdata(interface, device_skeleton);
+
+	// Device registration
+	return_output = usb_register_dev(interface, &skel_class);
+
+	if (return_output) {
+
+		// Register device error
+		printk(KERN_INFO "Not able to get a minor for this device.");
+		usb_set_intfdata(interface, NULL);
+	}
+
+	printk(KERN_INFO "USB Skeleton device now attached to USBSkel-%d", interface->minor);
+    printk(KERN_INFO "Dev drive (%04X:%04X) plugged\n", id->idVendor, id->idProduct);
+	return 0;
+    
 }
 
-// output for usb disconnect interruption
+// Output for usb disconnect interruption
 static void dev_disconnect(struct usb_interface *interface)
 {
     printk(KERN_INFO "Dev drive removed\n");
 }
 
-// hardcoded device table to check which device is plugged (on which device we should interrupt)
+// Hardcoded device table to check which device is plugged (on which device we should interrupt)
 static struct usb_device_id dev_table[] =
 {
-    { USB_DEVICE(0x04e8, 0x6860) }, // hardcoded usb device vendor and products id
-    {}// { USB_DEVICE(0X0566, 0x3002)} // govno 
+    { USB_DEVICE(0x04e8, 0x6860) }, // Hardcoded usb device vendor and products id
+    {}
 };
 MODULE_DEVICE_TABLE (usb, dev_table);
 
