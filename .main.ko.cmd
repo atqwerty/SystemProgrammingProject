@@ -1,1 +1,0 @@
-cmd_/home/denis/Desktop/2019/SystemProgramming/project/main.ko := ld -r -m elf_x86_64  -z max-page-size=0x200000 -T ./scripts/module-common.lds  --build-id  -o /home/denis/Desktop/2019/SystemProgramming/project/main.ko /home/denis/Desktop/2019/SystemProgramming/project/main.o /home/denis/Desktop/2019/SystemProgramming/project/main.mod.o ;  true
