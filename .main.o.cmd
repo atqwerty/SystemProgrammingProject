@@ -668,30 +668,7 @@ deps_/home/denis/Desktop/2019/SystemProgramming/project/main.o := \
     $(wildcard include/config/modules/use/elf/rel.h) \
     $(wildcard include/config/modules/use/elf/rela.h) \
   arch/x86/include/asm/orc_types.h \
-  include/linux/usb.h \
-    $(wildcard include/config/usb/mon.h) \
-    $(wildcard include/config/pm.h) \
-    $(wildcard include/config/usb/led/trig.h) \
-  include/linux/mod_devicetable.h \
-  include/linux/uuid.h \
-  include/uapi/linux/uuid.h \
-  include/linux/usb/ch9.h \
-  include/linux/device.h \
-    $(wildcard include/config/debug/devres.h) \
-    $(wildcard include/config/generic/msi/irq/domain.h) \
-    $(wildcard include/config/pinctrl.h) \
-    $(wildcard include/config/generic/msi/irq.h) \
-    $(wildcard include/config/dma/cma.h) \
-    $(wildcard include/config/of.h) \
-    $(wildcard include/config/devtmpfs.h) \
-    $(wildcard include/config/sysfs/deprecated.h) \
-  include/linux/ioport.h \
-  include/linux/klist.h \
-  include/linux/pm.h \
-    $(wildcard include/config/vt/console/sleep.h) \
-    $(wildcard include/config/pm/clk.h) \
-    $(wildcard include/config/pm/generic/domains.h) \
-  include/linux/ratelimit.h \
+  include/linux/uaccess.h \
   include/linux/sched.h \
     $(wildcard include/config/virt/cpu/accounting/native.h) \
     $(wildcard include/config/sched/info.h) \
@@ -789,6 +766,36 @@ deps_/home/denis/Desktop/2019/SystemProgramming/project/main.o := \
   include/linux/task_io_accounting.h \
     $(wildcard include/config/task/io/accounting.h) \
   include/uapi/linux/rseq.h \
+  arch/x86/include/asm/uaccess.h \
+    $(wildcard include/config/x86/intel/usercopy.h) \
+  arch/x86/include/asm/smap.h \
+    $(wildcard include/config/x86/smap.h) \
+  arch/x86/include/asm/extable.h \
+  arch/x86/include/asm/uaccess_64.h \
+  include/linux/usb.h \
+    $(wildcard include/config/usb/mon.h) \
+    $(wildcard include/config/pm.h) \
+    $(wildcard include/config/usb/led/trig.h) \
+  include/linux/mod_devicetable.h \
+  include/linux/uuid.h \
+  include/uapi/linux/uuid.h \
+  include/linux/usb/ch9.h \
+  include/linux/device.h \
+    $(wildcard include/config/debug/devres.h) \
+    $(wildcard include/config/generic/msi/irq/domain.h) \
+    $(wildcard include/config/pinctrl.h) \
+    $(wildcard include/config/generic/msi/irq.h) \
+    $(wildcard include/config/dma/cma.h) \
+    $(wildcard include/config/of.h) \
+    $(wildcard include/config/devtmpfs.h) \
+    $(wildcard include/config/sysfs/deprecated.h) \
+  include/linux/ioport.h \
+  include/linux/klist.h \
+  include/linux/pm.h \
+    $(wildcard include/config/vt/console/sleep.h) \
+    $(wildcard include/config/pm/clk.h) \
+    $(wildcard include/config/pm/generic/domains.h) \
+  include/linux/ratelimit.h \
   arch/x86/include/asm/device.h \
     $(wildcard include/config/intel/iommu.h) \
     $(wildcard include/config/amd/iommu.h) \
@@ -819,7 +826,6 @@ deps_/home/denis/Desktop/2019/SystemProgramming/project/main.o := \
   arch/x86/include/asm/irq.h \
   arch/x86/include/asm/sections.h \
   include/asm-generic/sections.h \
-  arch/x86/include/asm/extable.h \
   include/linux/fs.h \
     $(wildcard include/config/fs/posix/acl.h) \
     $(wildcard include/config/cgroup/writeback.h) \

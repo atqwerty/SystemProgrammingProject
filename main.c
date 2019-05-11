@@ -1,31 +1,107 @@
 #include <linux/kernel.h>
-// #include <linux/config.h>
 #include <linux/init.h>
 #include <linux/slab.h>
 #include <linux/module.h>
 #include <linux/errno.h>
-// #include <asm/uaccess.h>
-// #include <linux/smp_lock.h>
+#include <linux/uaccess.h>
 #include <linux/usb.h>
 #include <linux/kref.h>
+#include <asm/uaccess.h>
 
 #define MINOR_BASE	192
+#define to_skel_dev(d) container_of(d, struct usb_skel, kref)
+
+static struct usb_driver skel_driver;
 
 // USB skeleton struct
 struct usb_skel {
-	struct usb_device *	udev;			/* the usb device for this device */
-	struct usb_interface *	interface;		/* the interface for this device */
-	unsigned char *		bulk_in_buffer;		/* the buffer to receive data */
-	size_t			bulk_in_size;		/* the size of the receive buffer */
-	__u8			bulk_in_endpointAddr;	/* the address of the bulk in endpoint */
-	__u8			bulk_out_endpointAddr;	/* the address of the bulk out endpoint */
+	struct usb_device *	udev;
+	struct usb_interface *	interface;
+	unsigned char *		bulk_in_buffer;		// The buffer to receive data
+	size_t			bulk_in_size;		    // The size of the receive buffer
+	__u8			bulk_in_endpointAddr;	// The address of the bulk in endpoint
+	__u8			bulk_out_endpointAddr;	// The address of the bulk out endpoint
 	struct kref		kref;
 };
 
-static struct usb_class_driver skel_class = {
+// Buffer cleaner
+static const void skel_write_bulk_callback(struct urb *urb, struct pt_regs *regs)
+{
+	// if (urb->status && 
+	//     !(urb->status == -ENOENT || 
+	//       urb->status == -ECONNRESET ||
+	//       urb->status == -ESHUTDOWN)) {
+	// 	printk(KERN_INFO "%s - nonzero write bulk status received: %d",
+	// 	    __FUNCTION__, urb->status);
+	// }
+
+	// Free up our allocated buffer
+	usb_free_coherent(urb->dev, urb->transfer_buffer_length, 
+			urb->transfer_buffer, urb->transfer_dma);
+}
+
+// Write File to a device function
+static ssize_t dev_write(struct file *file, const char __user *user_buffer, size_t count, loff_t *ppos)
+{
+	struct usb_skel *device_skeleton;
+	int return_output = 0;
+	struct urb *urb = NULL;
+	char *buf = NULL;
+
+	device_skeleton = (struct usb_skel *)file->private_data;
+
+	/* verify that we actually have some data to write */
+	if (count == 0)
+		return 0;
+
+	/* create a urb, and a buffer for it, and copy the data to the urb */
+	urb = usb_alloc_urb(0, GFP_KERNEL);
+	if (!urb) {
+		return_output = -ENOMEM;
+		return return_output;
+	}
+
+	buf = usb_alloc_coherent(device_skeleton->udev, count, GFP_KERNEL, &urb->transfer_dma);
+	if (!buf) {
+		return_output = -ENOMEM;
+		return return_output;
+	}
+	if (copy_from_user(buf, user_buffer, count)) {
+		return_output = -EFAULT;
+		return return_output;
+	}
+
+	/* initialize the urb properly */
+	// usb_fill_bulk_urb(urb, device_skeleton->udev, usb_sndbulkpipe(device_skeleton->udev, device_skeleton->bulk_out_endpointAddr),
+	    // buf, count, *skel_write_bulk_callback, device_skeleton);
+
+	urb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
+
+	/* send the data out the bulk port */
+	return_output = usb_submit_urb(urb, GFP_KERNEL);
+	if (return_output) {
+		printk(KERN_INFO "%s - failed submitting write urb, error %d", __FUNCTION__, return_output);
+		return return_output;
+	}
+
+	/* release our reference to this urb, the USB core will eventually free it entirely */
+	usb_free_urb(urb);
+
+    return count;
+}
+
+// File operations for a device
+static struct file_operations operations = {
+	.owner =	THIS_MODULE,
+	// .read =		dev_read,
+	.write =	dev_write,
+	// .open =		dev_open,
+	// .release =	dev_release,
+};
+
+static struct usb_class_driver ucd = {
 	.name = "usb/skel%d",
-	// .fops = &skel_fops,
-	// .mode = S_IFCHR | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH,
+	.fops = &operations,
 	.minor_base = MINOR_BASE,
 };
 
@@ -86,7 +162,7 @@ static int dev_probe(struct usb_interface *interface, const struct usb_device_id
 	usb_set_intfdata(interface, device_skeleton);
 
 	// Device registration
-	return_output = usb_register_dev(interface, &skel_class);
+	return_output = usb_register_dev(interface, &ucd);
 
 	if (return_output) {
 
